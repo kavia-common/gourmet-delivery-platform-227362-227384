@@ -1,48 +1,81 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useCallback } from "react";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
+import "./App.css";
+
+import { AuthProvider } from "./contexts/AuthContext";
+import { CartProvider } from "./contexts/CartContext";
+
+import { Layout } from "./components/Layout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+
+import { HomePage } from "./pages/HomePage";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { RestaurantListPage } from "./pages/RestaurantListPage";
+import { RestaurantMenuPage } from "./pages/RestaurantMenuPage";
+import { CartPage } from "./pages/CartPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
+import { OrdersPage } from "./pages/OrdersPage";
+import { OrderDetailsPage } from "./pages/OrderDetailsPage";
+import { OwnerDashboardPage } from "./pages/OwnerDashboardPage";
+import { DeliveryDashboardPage } from "./pages/DeliveryDashboardPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
+
+function AppRoutes() {
+  const navigate = useNavigate();
+
+  const onAuthError = useCallback(
+    () => {
+      // Redirect to login on auth errors; keep UX consistent.
+      navigate("/login", { replace: true });
+    },
+    [navigate]
+  );
+
+  return (
+    <AuthProvider onAuthError={onAuthError}>
+      <CartProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomePage />} />
+
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+            <Route path="/restaurants" element={<RestaurantListPage />} />
+            <Route path="/restaurants/:restaurantId" element={<RestaurantMenuPage />} />
+
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+
+            <Route element={<ProtectedRoute />}>
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/orders/:orderId" element={<OrderDetailsPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute requireRole="restaurant" />}>
+              <Route path="/owner" element={<OwnerDashboardPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute requireRole="delivery" />}>
+              <Route path="/delivery" element={<DeliveryDashboardPage />} />
+            </Route>
+
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </CartProvider>
+    </AuthProvider>
+  );
+}
 
 // PUBLIC_INTERFACE
 function App() {
-  const [theme, setTheme] = useState('light');
-
-  // Effect to apply theme to document element
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
+  /** This is a public function. */
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 
